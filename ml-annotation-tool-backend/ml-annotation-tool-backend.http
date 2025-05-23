@@ -1,0 +1,6 @@
+@ml_annotation_tool_backend_HostAddress = http://localhost:5190
+
+GET {{ml_annotation_tool_backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
