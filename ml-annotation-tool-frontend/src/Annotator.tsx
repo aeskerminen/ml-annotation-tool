@@ -2,23 +2,8 @@ import { Stage, Layer, Rect, Transformer, Image } from 'react-konva';
 import { useState, useEffect, useRef } from 'react';
 import useImage from 'use-image'
 
-const initialRectangles = [
-    {
-        x: 0,
-        y: 0,
-        width: 100,
-        height: 90,
-        id: 'rect1',
-        stroke: 'black',
-        strokeWidth: 1,
-        name: 'rect',
-        rotation: 0,
-    },
-
-];
-
 const Annotator = () => {
-    const [rectangles, setRectangles] = useState(initialRectangles);
+    const [rectangles, setRectangles] = useState([]);
     const [selectedIds, setSelectedIds] = useState<Array<string>>([]);
 
     const [workingImage] = useImage("/images/annotation_test_image.jpeg");
@@ -123,8 +108,32 @@ const Annotator = () => {
     };
 
 
+    const addAnnotation = () => {
+        const newRect = {
+            x: 0,
+            y: 0,
+            width: stageSize.width,
+            height: stageSize.height,
+            id: 'rect1',
+            stroke: 'black',
+            strokeWidth: (stageSize.width + stageSize.height) / 250,
+            name: 'rect',
+            rotation: 0,
+        }
+
+        setRectangles(
+            [
+                ...rectangles,
+                newRect
+            ]
+        )
+    }
+
     return (
         <div className='bg-white flex-4 flex justify-center items-center' ref={containerRef}>
+            <div className='absolute' style={{ zIndex: 999, top: '95%' }}>
+                <button onClick={addAnnotation} className='p-2'>Add Annotation</button>
+            </div>
             <Stage
                 width={stageSize.width}
                 height={stageSize.height}
