@@ -21,7 +21,7 @@ const Annotator = () => {
     const [rectangles, setRectangles] = useState(initialRectangles);
     const [selectedIds, setSelectedIds] = useState<Array<string>>([]);
 
-    const [workingImage] = useImage('https://konvajs.org/assets/yoda.jpg');
+    const [workingImage] = useImage("/images/annotation_test_image.jpeg");
     const [imageSize, setImageSize] = useState({ width: 100, height: 100 });
 
     const isSelecting = useRef(false);
