@@ -2,6 +2,8 @@ import { Stage, Layer, Rect, Transformer, Image, Text } from 'react-konva';
 import { useState, useEffect, useRef } from 'react';
 import useImage from 'use-image'
 import { v4 as uuidv4 } from 'uuid';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState } from './store';
 
 const Annotator = () => {
     const [rectangles, setRectangles] = useState([]);
@@ -15,6 +17,8 @@ const Annotator = () => {
     const rectRefs = useRef(new Map());
 
     const containerRef = useRef(null);
+
+    const [showAnnotationModal, setShowAnnotationModal] = useState<boolean>(false)
 
     const [stageSize, setStageSize] = useState({
         width: 1000,
@@ -225,7 +229,7 @@ const Annotator = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'annotation.xml'; 
+        a.download = 'annotation.xml';
         document.body.appendChild(a);
         a.click();
 
@@ -234,12 +238,28 @@ const Annotator = () => {
     };
 
 
+    const [selectedAttribute, setSelectedAttribute] = useState<string>();
+
+    const attributes = useSelector((state: RootState) => state.attributes.value)
+    const dispatch = useDispatch()
+
     return (
         <div className='bg-white flex-4 flex justify-center items-center' ref={containerRef}>
             <div className='absolute flex flex-row gap-2' style={{ zIndex: 999, top: '95%' }}>
-                <button onClick={() => addAnnotation("test")} className='p-2'>Add Annotation</button>
+                <button onClick={() => setShowAnnotationModal(true)} className='p-2'>Add Annotation</button>
                 <button onClick={exportToVOCXML}>Export to VOC XML</button>
             </div>
+            {showAnnotationModal &&
+                <div className='absolute p-2 bg-black flex flex-col justify-center' style={{zIndex: 999}}>
+                    <select value={selectedAttribute} onChange={e => setSelectedAttribute(e.target.value)}>
+                        {attributes.map(a => {
+                           return <option value={a}>{a}</option>
+                        })}
+                    </select>
+                    <button onClick={() => {addAnnotation(selectedAttribute); setShowAnnotationModal(false)}}>Add</button>
+                </div>
+            }
+
             <Stage
                 width={stageSize.width}
                 height={stageSize.height}
