@@ -166,11 +166,61 @@ const Annotator = () => {
         return { x, y };
     }
 
+    function createVOCXml({ filename, path, width, height, depth = 3, boxes = [] }) {
+        const xmlHeader = `<?xml version="1.0"?>\n<annotation>`;
+        const xmlFooter = `</annotation>`;
+
+        const xmlMainInfo = `
+            <folder>VOCImages</folder>
+            <filename>${filename}</filename>
+            <path>${path}</path>
+            <source>
+                <database>Unknown</database>
+            </source>
+            <size>
+                <width>${width}</width>
+                <height>${height}</height>
+                <depth>${depth}</depth>
+            </size>
+            <segmented>0</segmented>`;
+
+        const xmlObjects = boxes.map(({ x, y, width, height, label }) => {
+            const xmin = x;
+            const ymin = y;
+            const xmax = x + width;
+            const ymax = y + height;
+
+            return `
+                <object>
+                    <name>${label}</name>
+                    <pose>Unspecified</pose>
+                    <truncated>0</truncated>
+                    <difficult>0</difficult>
+                    <bndbox>
+                    <xmin>${xmin}</xmin>
+                    <ymin>${ymin}</ymin>
+                    <xmax>${xmax}</xmax>
+                    <ymax>${ymax}</ymax>
+                    </bndbox>
+                </object>`;
+        }).join("\n");
+
+        return `${xmlHeader}${xmlMainInfo}${xmlObjects}\n${xmlFooter}`;
+    }
+
+
+    const exportToVOCXML = () => {
+        const raw_xml = createVOCXml({filename: 'test.jpg', path: 'test.jpg', width: 8256, height: 5504, boxes: rectangles})
+
+        console.log(raw_xml)
+    }
+
 
     return (
         <div className='bg-white flex-4 flex justify-center items-center' ref={containerRef}>
-            <div className='absolute' style={{ zIndex: 999, top: '95%' }}>
+            <div className='absolute flex flex-row gap-2' style={{ zIndex: 999, top: '95%' }}>
                 <button onClick={() => addAnnotation("test")} className='p-2'>Add Annotation</button>
+                <button onClick={exportToVOCXML}>Export to VOC XML</button>
             </div>
             <Stage
                 width={stageSize.width}
@@ -192,7 +242,7 @@ const Annotator = () => {
                     />
                     {/* Render rectangles directly */}
                     {rectangles.map((rect) => {
-                        const labelOffsetY = 100; 
+                        const labelOffsetY = 100;
                         const unrotatedLabelX = rect.x;
                         const unrotatedLabelY = rect.y - labelOffsetY;
 
