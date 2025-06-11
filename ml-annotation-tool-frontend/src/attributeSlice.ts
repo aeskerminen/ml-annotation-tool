@@ -13,12 +13,11 @@ export const attributeSlice = createSlice({
     name: 'attributes',
     initialState,
     reducers: {
-        add: (state, attribute) => {
-            state = [...state, attribute]
-
+        add: (state, action) => {
+            state.value.push(action.payload)
         },
-        remove: (state, attribute) => {
-            state = state.filter((a) => a !== attribute)
+        remove: (state, action) => {
+            state.value = state.value.filter((a) => a !== action.payload)
         }
     }
 })
