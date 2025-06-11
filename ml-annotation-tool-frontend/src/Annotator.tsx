@@ -1,31 +1,45 @@
 import { Stage, Layer, Rect, Transformer, Image, Text } from 'react-konva';
-import { useState, useEffect, useRef } from 'react';
-import useImage from 'use-image'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import useImage from 'use-image';
 import { v4 as uuidv4 } from 'uuid';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import type { RootState } from './store';
 
+// Rectangle annotation type
+interface Rectangle {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    id: string;
+    stroke: string;
+    strokeWidth: number;
+    name: string;
+    label: string;
+    rotation: number;
+}
+
+const DEFAULT_IMAGE = '/images/annotation_test_image.jpeg';
+const DEFAULT_STAGE_SIZE = { width: 1000, height: 1000, scale: 1 };
+const MIN_RECT_SIZE = 5;
+const LABEL_FONT_SIZE = 80;
+const LABEL_OFFSET_Y = 100;
+
 const Annotator = () => {
-    const [rectangles, setRectangles] = useState([]);
-    const [selectedIds, setSelectedIds] = useState<Array<string>>([]);
-
-    const [workingImage] = useImage("/images/annotation_test_image.jpeg");
+    const [rectangles, setRectangles] = useState<Rectangle[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [workingImage] = useImage(DEFAULT_IMAGE);
     const [imageSize, setImageSize] = useState({ width: 100, height: 100 });
-
     const isSelecting = useRef(false);
-    const transformerRef = useRef(null);
-    const rectRefs = useRef(new Map());
+    const transformerRef = useRef<any>(null);
+    const rectRefs = useRef<Map<string, any>>(new Map());
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+    const [stageSize, setStageSize] = useState(DEFAULT_STAGE_SIZE);
+    const [selectedAttribute, setSelectedAttribute] = useState<string>('');
+    const attributes = useSelector((state: RootState) => state.attributes.value);
 
-    const containerRef = useRef(null);
-
-    const [showAnnotationModal, setShowAnnotationModal] = useState<boolean>(false)
-
-    const [stageSize, setStageSize] = useState({
-        width: 1000,
-        height: 1000,
-        scale: 1,
-    });
-
+    // Update image size when loaded
     useEffect(() => {
         if (workingImage) {
             setImageSize({
@@ -35,58 +49,49 @@ const Annotator = () => {
         }
     }, [workingImage]);
 
-    const updateSize = () => {
+    // Responsive stage size
+    const updateSize = useCallback(() => {
         if (!containerRef.current || !imageSize.width || !imageSize.height) return;
-
         const containerWidth = containerRef.current.offsetWidth;
         const containerHeight = containerRef.current.offsetHeight || window.innerHeight;
-
         const scale = Math.min(
             containerWidth / imageSize.width,
             containerHeight / imageSize.height
         );
-
         setStageSize({
             width: imageSize.width * scale,
             height: imageSize.height * scale,
             scale,
         });
-    };
+    }, [imageSize]);
 
     useEffect(() => {
         updateSize();
         window.addEventListener('resize', updateSize);
-        return () => {
-            window.removeEventListener('resize', updateSize);
-        };
-    }, [imageSize]);
+        return () => window.removeEventListener('resize', updateSize);
+    }, [imageSize, updateSize]);
 
+    // Update transformer nodes on selection change
     useEffect(() => {
         if (selectedIds.length && transformerRef.current) {
             const nodes = selectedIds
                 .map(id => rectRefs.current.get(id))
-                .filter(node => node);
+                .filter(Boolean);
             transformerRef.current.nodes(nodes);
         } else if (transformerRef.current) {
             transformerRef.current.nodes([]);
         }
     }, [selectedIds]);
 
-    const handleStageClick = (e) => {
-        if (e.target === e.target.getStage()) {
+    // Stage click handler
+    const handleStageClick = useCallback((e: any) => {
+        if (e.target === e.target.getStage() || !e.target.hasName('rect')) {
             setSelectedIds([]);
             return;
         }
-
-        if (!e.target.hasName('rect')) {
-            setSelectedIds([]);
-            return;
-        }
-
         const clickedId = e.target.id();
         const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
         const isSelected = selectedIds.includes(clickedId);
-
         if (!metaPressed && !isSelected) {
             setSelectedIds([clickedId]);
         } else if (metaPressed && isSelected) {
@@ -94,24 +99,24 @@ const Annotator = () => {
         } else if (metaPressed && !isSelected) {
             setSelectedIds([...selectedIds, clickedId]);
         }
-    };
+    }, [selectedIds]);
 
-    const handleMouseDown = (e) => {
+    // Mouse event handlers (placeholders for future selection logic)
+    const handleMouseDown = useCallback((e: any) => {
         if (e.target !== e.target.getStage()) return;
-    };
-
-    const handleMouseMove = () => {
+    }, []);
+    const handleMouseMove = useCallback(() => {
         if (!isSelecting.current) return;
-    };
-
-    const handleMouseUp = () => {
+    }, []);
+    const handleMouseUp = useCallback(() => {
         if (!isSelecting.current) return;
         isSelecting.current = false;
-    };
+    }, []);
 
-
-    const addAnnotation = (label) => {
-        const newRect = {
+    // Add new annotation
+    const addAnnotation = useCallback((label?: string) => {
+        if (!label) return;
+        const newRect: Rectangle = {
             x: 0,
             y: 0,
             width: stageSize.width,
@@ -120,100 +125,63 @@ const Annotator = () => {
             stroke: 'black',
             strokeWidth: (stageSize.width + stageSize.height) / 250,
             name: 'rect',
-            label: label,
+            label,
             rotation: 0,
-        }
+        };
+        setRectangles(prev => [...prev, newRect]);
+    }, [stageSize]);
 
-        setRectangles(
-            [
-                ...rectangles,
-                newRect
-            ]
-        )
-    }
-
-    const handleTransformOrDrag = (id, node) => {
+    // Handle transform or drag
+    const handleTransformOrDrag = useCallback((id: string, node: any) => {
         const scaleX = node.scaleX();
         const scaleY = node.scaleY();
-
-        const updated = rectangles.map((rect) => {
+        setRectangles(prev => prev.map(rect => {
             if (rect.id === id) {
                 return {
                     ...rect,
                     x: node.x(),
                     y: node.y(),
-                    width: Math.max(5, rect.width * scaleX),
-                    height: Math.max(5, rect.height * scaleY),
+                    width: Math.max(MIN_RECT_SIZE, rect.width * scaleX),
+                    height: Math.max(MIN_RECT_SIZE, rect.height * scaleY),
                     rotation: node.rotation(),
                 };
             }
             return rect;
-        });
-
+        }));
         node.scaleX(1);
         node.scaleY(1);
+    }, []);
 
-        setRectangles(updated);
-    };
-
-    function rotatePoint(px, py, cx, cy, angleDeg) {
+    // Utility: rotate a point around a center
+    const rotatePoint = (px: number, py: number, cx: number, cy: number, angleDeg: number) => {
         const angleRad = (angleDeg * Math.PI) / 180;
         const cos = Math.cos(angleRad);
         const sin = Math.sin(angleRad);
-
         const dx = px - cx;
         const dy = py - cy;
+        return {
+            x: cx + dx * cos - dy * sin,
+            y: cy + dx * sin + dy * cos,
+        };
+    };
 
-        const x = cx + dx * cos - dy * sin;
-        const y = cy + dx * sin + dy * cos;
-
-        return { x, y };
-    }
-
-    function createVOCXml({ filename, path, width, height, depth = 3, boxes = [] }) {
+    // Create Pascal VOC XML
+    const createVOCXml = ({ filename, path, width, height, depth = 3, boxes = [] }: any) => {
         const xmlHeader = `<?xml version="1.0"?>\n<annotation>`;
         const xmlFooter = `</annotation>`;
-
-        const xmlMainInfo = `
-            <folder>VOCImages</folder>
-            <filename>${filename}</filename>
-            <path>${path}</path>
-            <source>
-                <database>Unknown</database>
-            </source>
-            <size>
-                <width>${width}</width>
-                <height>${height}</height>
-                <depth>${depth}</depth>
-            </size>
-            <segmented>0</segmented>`;
-
-        const xmlObjects = boxes.map(({ x, y, width, height, label }) => {
+        const xmlMainInfo = `\n    <folder>VOCImages</folder>\n    <filename>${filename}</filename>\n    <path>${path}</path>\n    <source>\n        <database>Unknown</database>\n    </source>\n    <size>\n        <width>${width}</width>\n        <height>${height}</height>\n        <depth>${depth}</depth>\n    </size>\n    <segmented>0</segmented>`;
+        const xmlObjects = boxes.map(({ x, y, width, height, label }: Rectangle) => {
             const xmin = x;
             const ymin = y;
             const xmax = x + width;
             const ymax = y + height;
-
-            return `
-                <object>
-                    <name>${label}</name>
-                    <pose>Unspecified</pose>
-                    <truncated>0</truncated>
-                    <difficult>0</difficult>
-                    <bndbox>
-                    <xmin>${xmin}</xmin>
-                    <ymin>${ymin}</ymin>
-                    <xmax>${xmax}</xmax>
-                    <ymax>${ymax}</ymax>
-                    </bndbox>
-                </object>`;
+            return `\n    <object>\n        <name>${label}</name>\n        <pose>Unspecified</pose>\n        <truncated>0</truncated>\n        <difficult>0</difficult>\n        <bndbox>\n        <xmin>${xmin}</xmin>\n        <ymin>${ymin}</ymin>\n        <xmax>${xmax}</xmax>\n        <ymax>${ymax}</ymax>\n        </bndbox>\n    </object>`;
         }).join("\n");
-
         return `${xmlHeader}${xmlMainInfo}${xmlObjects}\n${xmlFooter}`;
-    }
+    };
 
-
-    const exportToVOCXML = () => {
+    // Export to VOC XML
+    const exportToVOCXML = useCallback(() => {
         const raw_xml = createVOCXml({
             filename: 'test.jpg',
             path: 'test.jpg',
@@ -221,45 +189,81 @@ const Annotator = () => {
             height: 5504,
             boxes: rectangles
         });
-
-        console.log(raw_xml);
-
         const blob = new Blob([raw_xml], { type: 'application/xml' });
-
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = 'annotation.xml';
         document.body.appendChild(a);
         a.click();
-
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-    };
+    }, [rectangles]);
 
-
-    const [selectedAttribute, setSelectedAttribute] = useState<string>();
-
-    const attributes = useSelector((state: RootState) => state.attributes.value)
-    const dispatch = useDispatch()
+    // Memoized rectangle elements
+    const renderedRectangles = useMemo(() => rectangles.map((rect) => {
+        const unrotatedLabelX = rect.x;
+        const unrotatedLabelY = rect.y - LABEL_OFFSET_Y;
+        const { x: labelX, y: labelY } = rotatePoint(
+            unrotatedLabelX,
+            unrotatedLabelY,
+            rect.x,
+            rect.y,
+            rect.rotation
+        );
+        return (
+            <>
+                <Rect
+                    key={rect.id}
+                    x={rect.x}
+                    y={rect.y}
+                    width={rect.width}
+                    height={rect.height}
+                    stroke={rect.stroke}
+                    strokeWidth={rect.strokeWidth}
+                    id={rect.id}
+                    name={rect.name}
+                    rotation={rect.rotation}
+                    draggable
+                    ref={node => {
+                        if (node) rectRefs.current.set(rect.id, node);
+                    }}
+                    onTransformEnd={e => handleTransformOrDrag(rect.id, e.target)}
+                    onDragEnd={e => handleTransformOrDrag(rect.id, e.target)}
+                />
+                <Text
+                    key={`${rect.id}-label`}
+                    x={labelX}
+                    y={labelY}
+                    text={rect.label}
+                    fontSize={LABEL_FONT_SIZE}
+                    fontFamily="Arial"
+                    fill="black"
+                    padding={2}
+                    rotation={rect.rotation}
+                    listening={false}
+                />
+            </>
+        );
+    }), [rectangles, handleTransformOrDrag]);
 
     return (
-        <div className='bg-white flex-4 flex justify-center items-center' ref={containerRef}>
-            <div className='absolute flex flex-row gap-2' style={{ zIndex: 999, top: '95%' }}>
-                <button onClick={() => setShowAnnotationModal(true)} className='p-2'>Add Annotation</button>
+        <div className="bg-white flex-4 flex justify-center items-center" ref={containerRef}>
+            <div className="absolute flex flex-row gap-2" style={{ zIndex: 999, top: '95%' }}>
+                <button onClick={() => setShowAnnotationModal(true)} className="p-2">Add Annotation</button>
                 <button onClick={exportToVOCXML}>Export to VOC XML</button>
             </div>
-            {showAnnotationModal &&
-                <div className='absolute p-2 bg-black flex flex-col justify-center' style={{zIndex: 999}}>
+            {showAnnotationModal && (
+                <div className="absolute p-2 bg-black flex flex-col justify-center" style={{ zIndex: 999 }}>
                     <select value={selectedAttribute} onChange={e => setSelectedAttribute(e.target.value)}>
-                        {attributes.map(a => {
-                           return <option value={a}>{a}</option>
-                        })}
+                        <option value="" disabled>Select attribute</option>
+                        {attributes.map((a: string) => (
+                            <option key={a} value={a}>{a}</option>
+                        ))}
                     </select>
-                    <button onClick={() => {addAnnotation(selectedAttribute); setShowAnnotationModal(false)}}>Add</button>
+                    <button onClick={() => { addAnnotation(selectedAttribute); setShowAnnotationModal(false); }}>Add</button>
                 </div>
-            }
-
+            )}
             <Stage
                 width={stageSize.width}
                 height={stageSize.height}
@@ -278,66 +282,15 @@ const Annotator = () => {
                         width={workingImage?.width}
                         height={workingImage?.height}
                     />
-                    {/* Render rectangles directly */}
-                    {rectangles.map((rect) => {
-                        const labelOffsetY = 100;
-                        const unrotatedLabelX = rect.x;
-                        const unrotatedLabelY = rect.y - labelOffsetY;
-
-                        const { x: labelX, y: labelY } = rotatePoint(
-                            unrotatedLabelX,
-                            unrotatedLabelY,
-                            rect.x,
-                            rect.y,
-                            rect.rotation
-                        );
-
-                        return (
-                            <>
-                                <Rect
-                                    key={rect.id}
-                                    x={rect.x}
-                                    y={rect.y}
-                                    width={rect.width}
-                                    height={rect.height}
-                                    stroke={rect.stroke}
-                                    strokeWidth={rect.strokeWidth}
-                                    id={rect.id}
-                                    name={rect.name}
-                                    rotation={rect.rotation}
-                                    draggable
-                                    ref={node => {
-                                        if (node) rectRefs.current.set(rect.id, node);
-                                    }}
-                                    onTransformEnd={(e) => handleTransformOrDrag(rect.id, e.target)}
-                                    onDragEnd={(e) => handleTransformOrDrag(rect.id, e.target)}
-                                />
-                                <Text
-                                    key={`${rect.id}-label`}
-                                    x={labelX}
-                                    y={labelY}
-                                    text={rect.label}
-                                    fontSize={80}
-                                    fontFamily="Arial"
-                                    fill="black"
-                                    padding={2}
-                                    rotation={rect.rotation}
-                                    listening={false}
-                                />
-                            </>
-                        );
-                    })}
-
+                    {renderedRectangles}
                     <Transformer
                         ref={transformerRef}
                         boundBoxFunc={(oldBox, newBox) => {
-                            // Limit resize
-                            if (newBox.width < 5 || newBox.height < 5) {
+                            if (newBox.width < MIN_RECT_SIZE || newBox.height < MIN_RECT_SIZE) {
                                 return oldBox;
                             }
                             return newBox;
                         }}
-
                     />
                 </Layer>
             </Stage>
