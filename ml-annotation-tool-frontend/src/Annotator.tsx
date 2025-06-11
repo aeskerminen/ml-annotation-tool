@@ -25,6 +25,45 @@ const MIN_RECT_SIZE = 5;
 const LABEL_FONT_SIZE = 80;
 const LABEL_OFFSET_Y = 100;
 
+// Toolbar component for annotation actions
+const Toolbar = ({ onAdd, onExport }: { onAdd: () => void; onExport: () => void }) => (
+    <div className="absolute flex flex-row gap-2" style={{ zIndex: 999, top: '95%' }}>
+        <button onClick={onAdd} className="p-2">Add Annotation</button>
+        <button onClick={onExport}>Export to VOC XML</button>
+    </div>
+);
+
+// Modal for adding annotation
+const AnnotationModal = ({
+    show,
+    attributes,
+    selectedAttribute,
+    setSelectedAttribute,
+    onAdd,
+    onClose,
+}: {
+    show: boolean;
+    attributes: string[];
+    selectedAttribute: string;
+    setSelectedAttribute: (val: string) => void;
+    onAdd: () => void;
+    onClose: () => void;
+}) => {
+    if (!show) return null;
+    return (
+        <div className="absolute p-2 bg-black flex flex-col justify-center" style={{ zIndex: 999 }}>
+            <select value={selectedAttribute} onChange={e => setSelectedAttribute(e.target.value)}>
+                <option value="" disabled>Select attribute</option>
+                {attributes.map((a: string) => (
+                    <option key={a} value={a}>{a}</option>
+                ))}
+            </select>
+            <button onClick={onAdd}>Add</button>
+            <button onClick={onClose} className="mt-2">Cancel</button>
+        </div>
+    );
+};
+
 const Annotator = () => {
     const [rectangles, setRectangles] = useState<Rectangle[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -249,21 +288,15 @@ const Annotator = () => {
 
     return (
         <div className="bg-white flex-4 flex justify-center items-center" ref={containerRef}>
-            <div className="absolute flex flex-row gap-2" style={{ zIndex: 999, top: '95%' }}>
-                <button onClick={() => setShowAnnotationModal(true)} className="p-2">Add Annotation</button>
-                <button onClick={exportToVOCXML}>Export to VOC XML</button>
-            </div>
-            {showAnnotationModal && (
-                <div className="absolute p-2 bg-black flex flex-col justify-center" style={{ zIndex: 999 }}>
-                    <select value={selectedAttribute} onChange={e => setSelectedAttribute(e.target.value)}>
-                        <option value="" disabled>Select attribute</option>
-                        {attributes.map((a: string) => (
-                            <option key={a} value={a}>{a}</option>
-                        ))}
-                    </select>
-                    <button onClick={() => { addAnnotation(selectedAttribute); setShowAnnotationModal(false); }}>Add</button>
-                </div>
-            )}
+            <Toolbar onAdd={() => setShowAnnotationModal(true)} onExport={exportToVOCXML} />
+            <AnnotationModal
+                show={showAnnotationModal}
+                attributes={attributes}
+                selectedAttribute={selectedAttribute}
+                setSelectedAttribute={setSelectedAttribute}
+                onAdd={() => { addAnnotation(selectedAttribute); setShowAnnotationModal(false); }}
+                onClose={() => setShowAnnotationModal(false)}
+            />
             <Stage
                 width={stageSize.width}
                 height={stageSize.height}
