@@ -1,4 +1,5 @@
 import Annotator from './Annotator'
+import Attributes from './Attributes'
 
 const App = () => {
   return (
@@ -7,10 +8,7 @@ const App = () => {
         explorer
       </div>
       <Annotator></Annotator>
-
-      <div className='flex-1 text-center bg-gray-600'>
-        attributes
-      </div>
+      <Attributes></Attributes>
     </div>
   )
 }
