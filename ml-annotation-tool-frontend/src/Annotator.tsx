@@ -210,10 +210,28 @@ const Annotator = () => {
 
 
     const exportToVOCXML = () => {
-        const raw_xml = createVOCXml({filename: 'test.jpg', path: 'test.jpg', width: 8256, height: 5504, boxes: rectangles})
+        const raw_xml = createVOCXml({
+            filename: 'test.jpg',
+            path: 'test.jpg',
+            width: 8256,
+            height: 5504,
+            boxes: rectangles
+        });
 
-        console.log(raw_xml)
-    }
+        console.log(raw_xml);
+
+        const blob = new Blob([raw_xml], { type: 'application/xml' });
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'annotation.xml'; 
+        document.body.appendChild(a);
+        a.click();
+
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
 
 
     return (
