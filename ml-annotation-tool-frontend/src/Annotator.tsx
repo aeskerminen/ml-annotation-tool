@@ -1,4 +1,4 @@
-import { Stage, Layer, Rect, Transformer, Image } from 'react-konva';
+import { Stage, Layer, Rect, Transformer, Image, Text } from 'react-konva';
 import { useState, useEffect, useRef } from 'react';
 import useImage from 'use-image'
 
@@ -21,7 +21,6 @@ const Annotator = () => {
         scale: 1,
     });
 
-    // Update image size when loaded
     useEffect(() => {
         if (workingImage) {
             setImageSize({
@@ -31,7 +30,6 @@ const Annotator = () => {
         }
     }, [workingImage]);
 
-    // Resize logic
     const updateSize = () => {
         if (!containerRef.current || !imageSize.width || !imageSize.height) return;
 
@@ -58,7 +56,6 @@ const Annotator = () => {
         };
     }, [imageSize]);
 
-    // Update transformer when selection changes
     useEffect(() => {
         if (selectedIds.length && transformerRef.current) {
             const nodes = selectedIds
@@ -108,7 +105,7 @@ const Annotator = () => {
     };
 
 
-    const addAnnotation = () => {
+    const addAnnotation = (label) => {
         const newRect = {
             x: 0,
             y: 0,
@@ -118,6 +115,7 @@ const Annotator = () => {
             stroke: 'black',
             strokeWidth: (stageSize.width + stageSize.height) / 250,
             name: 'rect',
+            label: label,
             rotation: 0,
         }
 
@@ -129,10 +127,49 @@ const Annotator = () => {
         )
     }
 
+    const handleTransformOrDrag = (id, node) => {
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+
+        const updated = rectangles.map((rect) => {
+            if (rect.id === id) {
+                return {
+                    ...rect,
+                    x: node.x(),
+                    y: node.y(),
+                    width: Math.max(5, rect.width * scaleX),
+                    height: Math.max(5, rect.height * scaleY),
+                    rotation: node.rotation(),
+                };
+            }
+            return rect;
+        });
+
+        node.scaleX(1);
+        node.scaleY(1);
+
+        setRectangles(updated);
+    };
+
+    function rotatePoint(px, py, cx, cy, angleDeg) {
+        const angleRad = (angleDeg * Math.PI) / 180;
+        const cos = Math.cos(angleRad);
+        const sin = Math.sin(angleRad);
+
+        const dx = px - cx;
+        const dy = py - cy;
+
+        const x = cx + dx * cos - dy * sin;
+        const y = cy + dx * sin + dy * cos;
+
+        return { x, y };
+    }
+
+
     return (
         <div className='bg-white flex-4 flex justify-center items-center' ref={containerRef}>
             <div className='absolute' style={{ zIndex: 999, top: '95%' }}>
-                <button onClick={addAnnotation} className='p-2'>Add Annotation</button>
+                <button onClick={() => addAnnotation("test")} className='p-2'>Add Annotation</button>
             </div>
             <Stage
                 width={stageSize.width}
@@ -153,28 +190,55 @@ const Annotator = () => {
                         height={workingImage?.height}
                     />
                     {/* Render rectangles directly */}
-                    {rectangles.map(rect => (
-                        <Rect
-                            key={rect.id}
-                            id={rect.id}
-                            x={rect.x}
-                            y={rect.y}
-                            width={rect.width}
-                            height={rect.height}
-                            stroke={rect.stroke}
-                            strokeWidth={rect.strokeWidth}
-                            name={rect.name}
-                            rotation={rect.rotation}
-                            draggable
-                            ref={node => {
-                                if (node) {
-                                    rectRefs.current.set(rect.id, node);
-                                }
-                            }}
-                        />
-                    ))}
+                    {rectangles.map((rect) => {
+                        const labelOffsetY = 100; 
+                        const unrotatedLabelX = rect.x;
+                        const unrotatedLabelY = rect.y - labelOffsetY;
 
-                    {/* Single transformer for all selected shapes */}
+                        const { x: labelX, y: labelY } = rotatePoint(
+                            unrotatedLabelX,
+                            unrotatedLabelY,
+                            rect.x,
+                            rect.y,
+                            rect.rotation
+                        );
+
+                        return (
+                            <>
+                                <Rect
+                                    key={rect.id}
+                                    x={rect.x}
+                                    y={rect.y}
+                                    width={rect.width}
+                                    height={rect.height}
+                                    stroke={rect.stroke}
+                                    strokeWidth={rect.strokeWidth}
+                                    id={rect.id}
+                                    name={rect.name}
+                                    rotation={rect.rotation}
+                                    draggable
+                                    ref={node => {
+                                        if (node) rectRefs.current.set(rect.id, node);
+                                    }}
+                                    onTransformEnd={(e) => handleTransformOrDrag(rect.id, e.target)}
+                                    onDragEnd={(e) => handleTransformOrDrag(rect.id, e.target)}
+                                />
+                                <Text
+                                    key={`${rect.id}-label`}
+                                    x={labelX}
+                                    y={labelY}
+                                    text={rect.label}
+                                    fontSize={80}
+                                    fontFamily="Arial"
+                                    fill="black"
+                                    padding={2}
+                                    rotation={rect.rotation}
+                                    listening={false}
+                                />
+                            </>
+                        );
+                    })}
+
                     <Transformer
                         ref={transformerRef}
                         boundBoxFunc={(oldBox, newBox) => {
