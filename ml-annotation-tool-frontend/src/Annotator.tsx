@@ -1,6 +1,7 @@
 import { Stage, Layer, Rect, Transformer, Image, Text } from 'react-konva';
 import { useState, useEffect, useRef } from 'react';
 import useImage from 'use-image'
+import { v4 as uuidv4 } from 'uuid';
 
 const Annotator = () => {
     const [rectangles, setRectangles] = useState([]);
@@ -111,7 +112,7 @@ const Annotator = () => {
             y: 0,
             width: stageSize.width,
             height: stageSize.height,
-            id: 'rect1',
+            id: uuidv4(),
             stroke: 'black',
             strokeWidth: (stageSize.width + stageSize.height) / 250,
             name: 'rect',
