@@ -1,6 +1,12 @@
 import { useState } from "react"
+import { useDispatch, useSelector } from "react-redux";
+import { type RootState } from "./store";
 
 const Attributes = () => {
+
+    const attributes = useSelector((state: RootState) => state.attributes.value)
+    const dispatch = useDispatch()
+
     const [attributeList, setAttributeList] = useState<Array<string>>([]);
 
     const [attributeInput, setAttributeInput] = useState<string>();
