@@ -1,12 +1,11 @@
 import Annotator from './Annotator'
 import Attributes from './Attributes'
+import Explorer from './Explorer'
 
 const App = () => {
   return (
     <div className='flex flex-row w-screen h-screen'>
-      <div className='flex-1 text-center bg-gray-600'>
-        explorer
-      </div>
+      <Explorer></Explorer>
       <Annotator></Annotator>
       <Attributes></Attributes>
     </div>
