@@ -1,94 +1,16 @@
-import { Stage, Layer, Rect, Transformer, Image, Text } from 'react-konva';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import useImage from 'use-image';
 import { v4 as uuidv4 } from 'uuid';
 import { useSelector } from 'react-redux';
-import type { RootState } from '../store';
+import type { RootState } from '../../store';
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
-import { MdAddBox, MdOutlineFileDownload } from 'react-icons/md';
-
-// Rectangle annotation type
-interface Rectangle {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    id: string;
-    stroke: string;
-    strokeWidth: number;
-    name: string;
-    label: string;
-    rotation: number;
-}
-
-const DEFAULT_IMAGE = '/images/annotation_test_image.jpeg';
-const DEFAULT_STAGE_SIZE = { width: 1000, height: 1000, scale: 1 };
-const MIN_RECT_SIZE = 5;
-const LABEL_FONT_SIZE = 80;
-const LABEL_OFFSET_Y = 100;
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 5;
-
-// Utility function to limit a number between min and max
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-// Toolbar component for annotation actions
-const Toolbar = ({ onAdd, onExport }: { onAdd: () => void; onExport: () => void }) => (
-    <div className="absolute flex flex-row gap-4 top-6 z-50 bg-white/90 backdrop-blur-sm border-2 border-[#1976d2] shadow-lg p-2 rounded-lg items-center">
-        <button
-            onClick={onAdd}
-            className="bg-[#1976d2] text-white p-2 font-bold border border-[#1976d2] hover:bg-[#1565c0] transition rounded-lg focus:outline-none group relative"
-            title="Add Annotation"
-        >
-            <MdAddBox size={24} />
-            <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Add Annotation
-            </span>
-        </button>
-        <button
-            onClick={onExport}
-            className="bg-white text-[#1976d2] p-2 font-bold border border-[#1976d2] hover:bg-[#1976d2] hover:text-white transition rounded-lg focus:outline-none group relative"
-            title="Export to VOC XML"
-        >
-            <MdOutlineFileDownload size={24} />
-            <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Export to VOC XML
-            </span>
-        </button>
-    </div>
-);
-
-// Modal for adding annotation
-const AnnotationModal = ({
-    show,
-    attributes,
-    selectedAttribute,
-    setSelectedAttribute,
-    onAdd,
-    onClose,
-}: {
-    show: boolean;
-    attributes: string[];
-    selectedAttribute: string;
-    setSelectedAttribute: (val: string) => void;
-    onAdd: () => void;
-    onClose: () => void;
-}) => {
-    if (!show) return null;
-    return (
-        <div className="absolute p-2 bg-black flex flex-col justify-center" style={{ zIndex: 999 }}>
-            <select value={selectedAttribute} onChange={e => setSelectedAttribute(e.target.value)}>
-                <option value="" disabled>Select attribute</option>
-                {attributes.map((a: string) => (
-                    <option key={a} value={a}>{a}</option>
-                ))}
-            </select>
-            <button onClick={onAdd}>Add</button>
-            <button onClick={onClose} className="mt-2">Cancel</button>
-        </div>
-    );
-};
+import { ImageStage } from './components/ImageStage';
+import { AnnotationModal } from './components/AnnotationModal';
+import { Toolbar } from './components/Toolbar';
+import { DEFAULT_IMAGE, DEFAULT_STAGE_SIZE, MIN_ZOOM, MAX_ZOOM, MIN_RECT_SIZE } from './utils/annotator_constants';
+import type { Rectangle } from './types/Rectangle';
+import { clamp } from './utils/helper_functions';
 
 const Annotator = () => {
     const [rectangles, setRectangles] = useState<Rectangle[]>([]);
@@ -153,7 +75,7 @@ const Annotator = () => {
     // Handle zoom
     const handleWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
         e.evt.preventDefault();
-        
+
         if (!stageRef.current) return;
 
         const stage = stageRef.current;
@@ -174,7 +96,7 @@ const Annotator = () => {
         );
 
         setZoom(newZoom);
-        
+
         setStagePosition({
             x: pointer.x - mousePointTo.x * newZoom,
             y: pointer.y - mousePointTo.y * newZoom,
@@ -252,19 +174,6 @@ const Annotator = () => {
         node.scaleY(1);
     }, []);
 
-    // Utility: rotate a point around a center
-    const rotatePoint = (px: number, py: number, cx: number, cy: number, angleDeg: number) => {
-        const angleRad = (angleDeg * Math.PI) / 180;
-        const cos = Math.cos(angleRad);
-        const sin = Math.sin(angleRad);
-        const dx = px - cx;
-        const dy = py - cy;
-        return {
-            x: cx + dx * cos - dy * sin,
-            y: cy + dx * sin + dy * cos,
-        };
-    };
-
     // Create Pascal VOC XML
     const createVOCXml = ({ filename, path, width, height, depth = 3, boxes = [] }: any) => {
         const xmlHeader = `<?xml version="1.0"?>\n<annotation>`;
@@ -300,53 +209,6 @@ const Annotator = () => {
         window.URL.revokeObjectURL(url);
     }, [rectangles]);
 
-    // Memoized rectangle elements
-    const renderedRectangles = useMemo(() => rectangles.map((rect) => {
-        const unrotatedLabelX = rect.x;
-        const unrotatedLabelY = rect.y - LABEL_OFFSET_Y;
-        const { x: labelX, y: labelY } = rotatePoint(
-            unrotatedLabelX,
-            unrotatedLabelY,
-            rect.x,
-            rect.y,
-            rect.rotation
-        );
-        return (
-            <>
-                <Rect
-                    key={rect.id}
-                    x={rect.x}
-                    y={rect.y}
-                    width={rect.width}
-                    height={rect.height}
-                    stroke={rect.stroke}
-                    strokeWidth={rect.strokeWidth}
-                    id={rect.id}
-                    name={rect.name}
-                    rotation={rect.rotation}
-                    draggable
-                    ref={node => {
-                        if (node) rectRefs.current.set(rect.id, node);
-                    }}
-                    onTransformEnd={e => handleTransformOrDrag(rect.id, e.target)}
-                    onDragEnd={e => handleTransformOrDrag(rect.id, e.target)}
-                />
-                <Text
-                    key={`${rect.id}-label`}
-                    x={labelX}
-                    y={labelY}
-                    text={rect.label}
-                    fontSize={LABEL_FONT_SIZE}
-                    fontFamily="Arial"
-                    fill="black"
-                    padding={2}
-                    rotation={rect.rotation}
-                    listening={false}
-                />
-            </>
-        );
-    }), [rectangles, handleTransformOrDrag]);
-
     return (
         <div className="bg-blue-100 flex-4 flex justify-center items-center relative h-full overflow-hidden" ref={containerRef}>
             <Toolbar onAdd={() => setShowAnnotationModal(true)} onExport={exportToVOCXML} />
@@ -358,42 +220,21 @@ const Annotator = () => {
                 onAdd={() => { addAnnotation(selectedAttribute); setShowAnnotationModal(false); }}
                 onClose={() => setShowAnnotationModal(false)}
             />
-            <Stage
-                ref={stageRef}
-                width={stageSize.width}
-                height={stageSize.height}
+            <ImageStage
+                stageSize={stageSize}
+                stagePosition={stagePosition}
+                zoom={zoom}
+                workingImage={workingImage}
+                rectangles={rectangles}
                 onWheel={handleWheel}
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
-                draggable
-                x={stagePosition.x}
-                y={stagePosition.y}
-                scaleX={zoom}
-                scaleY={zoom}
                 onClick={handleStageClick}
-            >
-                <Layer>
-                    <Image
-                        x={0}
-                        y={0}
-                        image={workingImage}
-                        width={workingImage?.width}
-                        height={workingImage?.height}
-                        stroke={'black'}
-                        strokeWidth={20}
-                    />
-                    {renderedRectangles}
-                    <Transformer
-                        ref={transformerRef}
-                        boundBoxFunc={(oldBox, newBox) => {
-                            if (newBox.width < MIN_RECT_SIZE || newBox.height < MIN_RECT_SIZE) {
-                                return oldBox;
-                            }
-                            return newBox;
-                        }}
-                    />
-                </Layer>
-            </Stage>
+                transformerRef={transformerRef}
+                stageRef={stageRef}
+                handleTransformOrDrag={handleTransformOrDrag}
+                rectRefs={rectRefs}
+            />
         </div>
     );
 };
