@@ -209,9 +209,13 @@ const Annotator = () => {
         window.URL.revokeObjectURL(url);
     }, [rectangles]);
 
+    const uploadNewImage = () =>{
+        
+    }
+
     return (
         <div className="bg-blue-100 flex-4 flex justify-center items-center relative h-full overflow-hidden" ref={containerRef}>
-            <Toolbar onAdd={() => setShowAnnotationModal(true)} onExport={exportToVOCXML} />
+            <Toolbar onAdd={() => setShowAnnotationModal(true)} onExport={exportToVOCXML} onUpload={uploadNewImage}/>
             <AnnotationModal
                 show={showAnnotationModal}
                 attributes={attributes}
