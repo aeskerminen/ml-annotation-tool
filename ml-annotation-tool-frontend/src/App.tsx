@@ -1,6 +1,6 @@
-import Annotator from './Annotator'
-import Attributes from './Attributes'
-import Explorer from './Explorer'
+import Annotator from "./components/Annotator"
+import Attributes from "./components/Attributes"
+import Explorer from "./components/Explorer"
 
 const App = () => {
   return (

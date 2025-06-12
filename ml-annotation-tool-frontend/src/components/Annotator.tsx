@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import useImage from 'use-image';
 import { v4 as uuidv4 } from 'uuid';
 import { useSelector } from 'react-redux';
-import type { RootState } from './store';
+import type { RootState } from '../store';
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { MdAddBox, MdOutlineFileDownload } from 'react-icons/md';
