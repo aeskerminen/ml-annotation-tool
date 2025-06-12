@@ -2,7 +2,7 @@ import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useMemo } from 'react';
 import { Rect, Text, Stage, Layer, Image, Transformer } from 'react-konva';
-import { DEFAULT_IMAGE, DEFAULT_STAGE_SIZE, MIN_ZOOM, MAX_ZOOM, MIN_RECT_SIZE, LABEL_OFFSET_Y, LABEL_FONT_SIZE } from '../utils/annotator_constants';
+import { MIN_RECT_SIZE, LABEL_OFFSET_Y, LABEL_FONT_SIZE } from '../utils/annotator_constants';
 import { type Rectangle } from '../types/Rectangle';
 import { rotatePoint } from '../utils/helper_functions';
 
