@@ -27,9 +27,19 @@ const LABEL_OFFSET_Y = 100;
 
 // Toolbar component for annotation actions
 const Toolbar = ({ onAdd, onExport }: { onAdd: () => void; onExport: () => void }) => (
-    <div className="absolute flex flex-row gap-2" style={{ zIndex: 999, top: '95%' }}>
-        <button onClick={onAdd} className="p-2">Add Annotation</button>
-        <button onClick={onExport}>Export to VOC XML</button>
+    <div className="absolute flex flex-row gap-4 top-6 z-50 bg-white border-2 border-[#1976d2] shadow-lg p-2 rounded items-center">
+        <button
+            onClick={onAdd}
+            className="bg-[#1976d2] text-white px-6 py-2 font-bold border border-[#1976d2] hover:bg-[#1565c0] transition rounded focus:outline-none"
+        >
+            Add Annotation
+        </button>
+        <button
+            onClick={onExport}
+            className="bg-white text-[#1976d2] px-6 py-2 font-bold border border-[#1976d2] hover:bg-[#1976d2] hover:text-white transition rounded focus:outline-none"
+        >
+            Export to VOC XML
+        </button>
     </div>
 );
 
