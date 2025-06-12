@@ -4,6 +4,8 @@ import useImage from 'use-image';
 import { v4 as uuidv4 } from 'uuid';
 import { useSelector } from 'react-redux';
 import type { RootState } from './store';
+import Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
 
 // Rectangle annotation type
 interface Rectangle {
@@ -24,6 +26,11 @@ const DEFAULT_STAGE_SIZE = { width: 1000, height: 1000, scale: 1 };
 const MIN_RECT_SIZE = 5;
 const LABEL_FONT_SIZE = 80;
 const LABEL_OFFSET_Y = 100;
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 5;
+
+// Utility function to limit a number between min and max
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 // Toolbar component for annotation actions
 const Toolbar = ({ onAdd, onExport }: { onAdd: () => void; onExport: () => void }) => (
@@ -79,8 +86,10 @@ const Annotator = () => {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [workingImage] = useImage(DEFAULT_IMAGE);
     const [imageSize, setImageSize] = useState({ width: 100, height: 100 });
-    const isSelecting = useRef(false);
-    const transformerRef = useRef<any>(null);
+    const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const stageRef = useRef<Konva.Stage>(null);
+    const transformerRef = useRef<Konva.Transformer>(null);
     const rectRefs = useRef<Map<string, any>>(new Map());
     const containerRef = useRef<HTMLDivElement>(null);
     const [showAnnotationModal, setShowAnnotationModal] = useState(false);
@@ -132,8 +141,53 @@ const Annotator = () => {
         }
     }, [selectedIds]);
 
+    // Handle zoom
+    const handleWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
+        e.evt.preventDefault();
+        
+        if (!stageRef.current) return;
+
+        const stage = stageRef.current;
+        const oldScale = zoom;
+        const pointer = stage.getPointerPosition();
+
+        if (!pointer) return;
+
+        const mousePointTo = {
+            x: (pointer.x - stagePosition.x) / oldScale,
+            y: (pointer.y - stagePosition.y) / oldScale,
+        };
+
+        const newZoom = clamp(
+            zoom * (e.evt.deltaY < 0 ? 1.1 : 1 / 1.1),
+            MIN_ZOOM,
+            MAX_ZOOM
+        );
+
+        setZoom(newZoom);
+        
+        setStagePosition({
+            x: pointer.x - mousePointTo.x * newZoom,
+            y: pointer.y - mousePointTo.y * newZoom,
+        });
+    }, [zoom, stagePosition]);
+
+    // Handle stage drag
+    const handleDragStart = useCallback((e: KonvaEventObject<DragEvent>) => {
+        if (e.target !== e.target.getStage()) return;
+        setSelectedIds([]);
+    }, []);
+
+    const handleDragMove = useCallback((e: KonvaEventObject<DragEvent>) => {
+        if (e.target !== e.target.getStage()) return;
+        setStagePosition({
+            x: e.target.x(),
+            y: e.target.y(),
+        });
+    }, []);
+
     // Stage click handler
-    const handleStageClick = useCallback((e: any) => {
+    const handleStageClick = useCallback((e: KonvaEventObject<MouseEvent>) => {
         if (e.target === e.target.getStage() || !e.target.hasName('rect')) {
             setSelectedIds([]);
             return;
@@ -149,18 +203,6 @@ const Annotator = () => {
             setSelectedIds([...selectedIds, clickedId]);
         }
     }, [selectedIds]);
-
-    // Mouse event handlers (placeholders for future selection logic)
-    const handleMouseDown = useCallback((e: any) => {
-        if (e.target !== e.target.getStage()) return;
-    }, []);
-    const handleMouseMove = useCallback(() => {
-        if (!isSelecting.current) return;
-    }, []);
-    const handleMouseUp = useCallback(() => {
-        if (!isSelecting.current) return;
-        isSelecting.current = false;
-    }, []);
 
     // Add new annotation
     const addAnnotation = useCallback((label?: string) => {
@@ -297,7 +339,7 @@ const Annotator = () => {
     }), [rectangles, handleTransformOrDrag]);
 
     return (
-        <div className="bg-white flex-4 flex justify-center items-center" ref={containerRef}>
+        <div className="bg-white flex-4 flex justify-center items-center relative h-full overflow-hidden" ref={containerRef}>
             <Toolbar onAdd={() => setShowAnnotationModal(true)} onExport={exportToVOCXML} />
             <AnnotationModal
                 show={showAnnotationModal}
@@ -308,13 +350,17 @@ const Annotator = () => {
                 onClose={() => setShowAnnotationModal(false)}
             />
             <Stage
+                ref={stageRef}
                 width={stageSize.width}
                 height={stageSize.height}
-                scaleX={stageSize.scale}
-                scaleY={stageSize.scale}
-                onMouseDown={handleMouseDown}
-                onMousemove={handleMouseMove}
-                onMouseup={handleMouseUp}
+                onWheel={handleWheel}
+                onDragStart={handleDragStart}
+                onDragMove={handleDragMove}
+                draggable
+                x={stagePosition.x}
+                y={stagePosition.y}
+                scaleX={zoom}
+                scaleY={zoom}
                 onClick={handleStageClick}
             >
                 <Layer>
