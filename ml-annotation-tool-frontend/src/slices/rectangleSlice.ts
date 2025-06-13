@@ -1,15 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-export interface AttributeState {
+export interface rectangleState {
     value: Array<string>
 }
 
-const initialState: AttributeState = {
+const initialState: rectangleState = {
     value: []
 }
 
-export const attributeSlice = createSlice({
-    name: 'attributes',
+export const rectangleSlice = createSlice({
+    name: 'rectangles',
     initialState,
     reducers: {
         add: (state, action) => {
@@ -22,6 +22,6 @@ export const attributeSlice = createSlice({
 })
 
 
-export const { add, remove } = attributeSlice.actions
+export const { add, remove } = rectangleSlice.actions
 
-export default attributeSlice.reducer
+export default rectangleSlice.reducer
