@@ -1,7 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit'
+import type { Rectangle } from '../features/annotator/types/Rectangle'
 
 export interface rectangleState {
-    value: Array<string>
+    value: Array<Rectangle>
 }
 
 const initialState: rectangleState = {
