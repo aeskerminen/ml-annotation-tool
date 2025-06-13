@@ -15,7 +15,8 @@ import { clamp } from './utils/helper_functions';
 const Annotator = () => {
     const [rectangles, setRectangles] = useState<Rectangle[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [workingImage] = useImage(DEFAULT_IMAGE);
+    const [customImageUrl, setCustomImageUrl] = useState<string>(DEFAULT_IMAGE);
+    const [workingImage] = useImage(customImageUrl);
     const [imageSize, setImageSize] = useState({ width: 100, height: 100 });
     const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -209,13 +210,40 @@ const Annotator = () => {
         window.URL.revokeObjectURL(url);
     }, [rectangles]);
 
-    const uploadNewImage = () =>{
+
+    const uploadNewImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please upload an image file');
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
         
-    }
+        if (customImageUrl && customImageUrl !== DEFAULT_IMAGE) {
+            URL.revokeObjectURL(customImageUrl);
+        }
+
+        setCustomImageUrl(objectUrl);
+    }, [customImageUrl]);
+
+    useEffect(() => {
+        return () => {
+            if (customImageUrl && customImageUrl !== DEFAULT_IMAGE) {
+                URL.revokeObjectURL(customImageUrl);
+            }
+        };
+    }, [customImageUrl]);
 
     return (
         <div className="bg-blue-100 flex-4 flex justify-center items-center relative h-full overflow-hidden" ref={containerRef}>
-            <Toolbar onAdd={() => setShowAnnotationModal(true)} onExport={exportToVOCXML} onUpload={uploadNewImage}/>
+            <Toolbar 
+                onAdd={() => setShowAnnotationModal(true)} 
+                onExport={exportToVOCXML} 
+                onUpload={uploadNewImage} 
+            />
             <AnnotationModal
                 show={showAnnotationModal}
                 attributes={attributes}
