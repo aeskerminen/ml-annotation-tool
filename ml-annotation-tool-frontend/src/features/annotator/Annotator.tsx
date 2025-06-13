@@ -50,7 +50,7 @@ const Annotator = () => {
         );
         setStageSize({
             width: imageSize.width * scale,
-            height: imageSize.height * scale,
+            height: containerHeight,
             scale,
         });
     }, [imageSize]);
@@ -238,7 +238,7 @@ const Annotator = () => {
     }, [customImageUrl]);
 
     return (
-        <div className="bg-blue-100 flex-4 flex justify-center items-center relative h-full overflow-hidden" ref={containerRef}>
+        <div className="bg-blue-100 flex-4 flex justify-center items-center relative h-screen overflow-hidden" ref={containerRef}>
             <Toolbar 
                 onAdd={() => setShowAnnotationModal(true)} 
                 onExport={exportToVOCXML} 
