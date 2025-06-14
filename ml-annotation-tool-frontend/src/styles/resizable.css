@@ -1,0 +1,32 @@
+.resizable-panel {
+    position: relative;
+}
+
+.resize-handle-horizontal {
+    width: 4px;
+    height: 100%;
+    background: #e2e8f0;
+    position: absolute;
+    right: -2px;
+    top: 0;
+    cursor: ew-resize;
+    transition: background 0.2s;
+    z-index: 10;
+}
+
+.resize-handle-vertical {
+    width: 100%;
+    height: 4px;
+    background: #e2e8f0;
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    cursor: ns-resize;
+    transition: background 0.2s;
+    z-index: 10;
+}
+
+.resize-handle-horizontal:hover,
+.resize-handle-vertical:hover {
+    background: #1976d2;
+}
