@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 import attributeReducer from "./slices/attributeSlice"
+import rectangleReducer from "./slices/rectangleSlice"
 
 export const store = configureStore({
   reducer: {
-    attributes: attributeReducer
+    attributes: attributeReducer,
+    rectangles: rectangleReducer
   },
 })
 
