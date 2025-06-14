@@ -11,7 +11,7 @@ import { Toolbar } from './components/Toolbar';
 import { DEFAULT_IMAGE, DEFAULT_STAGE_SIZE, MIN_ZOOM, MAX_ZOOM, MIN_RECT_SIZE } from './utils/annotator_constants';
 import type { Rectangle } from './types/Rectangle';
 import { clamp } from './utils/helper_functions';
-import { add, remove, update, updateLabel } from '../../slices/rectangleSlice';
+import { add, update,  } from '../../slices/rectangleSlice';
 
 const Annotator = () => {
     const rectangles = useSelector((state: RootState) => state.rectangles.value);
