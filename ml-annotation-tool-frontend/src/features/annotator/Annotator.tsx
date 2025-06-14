@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import useImage from 'use-image';
 import { v4 as uuidv4 } from 'uuid';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
@@ -11,9 +11,12 @@ import { Toolbar } from './components/Toolbar';
 import { DEFAULT_IMAGE, DEFAULT_STAGE_SIZE, MIN_ZOOM, MAX_ZOOM, MIN_RECT_SIZE } from './utils/annotator_constants';
 import type { Rectangle } from './types/Rectangle';
 import { clamp } from './utils/helper_functions';
+import { add, remove, update, updateLabel } from '../../slices/rectangleSlice';
 
 const Annotator = () => {
-    const [rectangles, setRectangles] = useState<Rectangle[]>([]);
+    const rectangles = useSelector((state: RootState) => state.rectangles.value);
+    const dispatch = useDispatch();
+
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [customImageUrl, setCustomImageUrl] = useState<string>(DEFAULT_IMAGE);
     const [workingImage] = useImage(customImageUrl);
@@ -151,29 +154,26 @@ const Annotator = () => {
             label,
             rotation: 0,
         };
-        setRectangles(prev => [...prev, newRect]);
-    }, [stageSize]);
+        dispatch(add(newRect));
+    }, [stageSize, dispatch]);
 
     // Handle transform or drag
     const handleTransformOrDrag = useCallback((id: string, node: any) => {
         const scaleX = node.scaleX();
         const scaleY = node.scaleY();
-        setRectangles(prev => prev.map(rect => {
-            if (rect.id === id) {
-                return {
-                    ...rect,
-                    x: node.x(),
-                    y: node.y(),
-                    width: Math.max(MIN_RECT_SIZE, rect.width * scaleX),
-                    height: Math.max(MIN_RECT_SIZE, rect.height * scaleY),
-                    rotation: node.rotation(),
-                };
+        dispatch(update({
+            id,
+            changes: {
+                x: node.x(),
+                y: node.y(),
+                width: Math.max(MIN_RECT_SIZE, node.width() * scaleX),
+                height: Math.max(MIN_RECT_SIZE, node.height() * scaleY),
+                rotation: node.rotation(),
             }
-            return rect;
         }));
         node.scaleX(1);
         node.scaleY(1);
-    }, []);
+    }, [dispatch]);
 
     // Create Pascal VOC XML
     const createVOCXml = ({ filename, path, width, height, depth = 3, boxes = [] }: any) => {
@@ -221,7 +221,7 @@ const Annotator = () => {
         }
 
         const objectUrl = URL.createObjectURL(file);
-        
+
         if (customImageUrl && customImageUrl !== DEFAULT_IMAGE) {
             URL.revokeObjectURL(customImageUrl);
         }
@@ -239,10 +239,10 @@ const Annotator = () => {
 
     return (
         <div className="bg-blue-100 flex-4 flex justify-center items-center relative h-screen overflow-hidden" ref={containerRef}>
-            <Toolbar 
-                onAdd={() => setShowAnnotationModal(true)} 
-                onExport={exportToVOCXML} 
-                onUpload={uploadNewImage} 
+            <Toolbar
+                onAdd={() => setShowAnnotationModal(true)}
+                onExport={exportToVOCXML}
+                onUpload={uploadNewImage}
             />
             <AnnotationModal
                 show={showAnnotationModal}
