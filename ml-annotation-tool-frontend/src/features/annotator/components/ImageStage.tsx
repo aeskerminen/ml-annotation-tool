@@ -46,7 +46,7 @@ export const ImageStage = ({
                     stroke={rect.stroke}
                     strokeWidth={rect.strokeWidth}
                     id={rect.id}
-                    name={rect.name}
+                    name="rect"
                     rotation={rect.rotation}
                     draggable
                     ref={node => {
@@ -58,7 +58,7 @@ export const ImageStage = ({
                     key={`${rect.id}-label`}
                     x={labelX}
                     y={labelY}
-                    text={rect.label}
+                    text={rect.name ? `${rect.name} (${rect.label})` : rect.label}
                     fontSize={LABEL_FONT_SIZE}
                     fontFamily="Arial"
                     fill="black"

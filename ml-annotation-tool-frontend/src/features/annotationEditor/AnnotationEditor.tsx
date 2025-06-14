@@ -49,7 +49,7 @@ export const AnnotationEditor = () => {
                             >
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="font-mono font-bold text-[#1976d2]">
-                                        {rect.label}
+                                        {rect.name ? `${rect.name} (${rect.label})` : rect.label}
                                     </span>
                                     <button
                                         onClick={(e) => {
@@ -67,13 +67,23 @@ export const AnnotationEditor = () => {
                             </div>
                             {selectedRect === rect.id && (
                                 <div className="bg-white p-4 border-t border-gray-100">
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                            <input
+                                                type="text"
+                                                value={rect.name || ''}
+                                                onChange={(e) => handleUpdateRect(rect.id, { name: e.target.value })}
+                                                placeholder="Enter a custom name"
+                                                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-gray-900"
+                                            />
+                                        </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
                                             <select
                                                 value={rect.label}
                                                 onChange={(e) => handleLabelChange(rect.id, e.target.value)}
-                                                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                                                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-gray-900"
                                             >
                                                 {attributes.map((attr) => (
                                                     <option key={attr} value={attr}>
@@ -89,7 +99,7 @@ export const AnnotationEditor = () => {
                                                     type="number"
                                                     value={Math.round(rect.x)}
                                                     onChange={(e) => handleUpdateRect(rect.id, { x: Number(e.target.value) })}
-                                                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                                                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-gray-900"
                                                 />
                                             </div>
                                             <div>
@@ -98,7 +108,7 @@ export const AnnotationEditor = () => {
                                                     type="number"
                                                     value={Math.round(rect.y)}
                                                     onChange={(e) => handleUpdateRect(rect.id, { y: Number(e.target.value) })}
-                                                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                                                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-gray-900"
                                                 />
                                             </div>
                                             <div>
@@ -107,7 +117,7 @@ export const AnnotationEditor = () => {
                                                     type="number"
                                                     value={Math.round(rect.width)}
                                                     onChange={(e) => handleUpdateRect(rect.id, { width: Math.max(5, Number(e.target.value)) })}
-                                                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                                                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-gray-900"
                                                 />
                                             </div>
                                             <div>
@@ -116,7 +126,7 @@ export const AnnotationEditor = () => {
                                                     type="number"
                                                     value={Math.round(rect.height)}
                                                     onChange={(e) => handleUpdateRect(rect.id, { height: Math.max(5, Number(e.target.value)) })}
-                                                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                                                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-gray-900"
                                                 />
                                             </div>
                                         </div>
@@ -126,7 +136,7 @@ export const AnnotationEditor = () => {
                                                 type="number"
                                                 value={Math.round(rect.rotation)}
                                                 onChange={(e) => handleUpdateRect(rect.id, { rotation: Number(e.target.value) })}
-                                                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                                                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-gray-900"
                                             />
                                         </div>
                                     </div>

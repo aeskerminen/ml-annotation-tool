@@ -142,6 +142,7 @@ const Annotator = () => {
     // Add new annotation
     const addAnnotation = useCallback((label?: string) => {
         if (!label) return;
+        const existingCount = rectangles.filter(r => r.label === label).length;
         const newRect: Rectangle = {
             x: 0,
             y: 0,
@@ -150,7 +151,7 @@ const Annotator = () => {
             id: uuidv4(),
             stroke: 'black',
             strokeWidth: (stageSize.width + stageSize.height) / 250,
-            name: 'rect',
+            name: existingCount ? `${label} ${existingCount + 1}` : '',
             label,
             rotation: 0,
         };
