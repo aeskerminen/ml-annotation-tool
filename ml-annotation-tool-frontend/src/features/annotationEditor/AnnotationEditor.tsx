@@ -4,7 +4,7 @@ import { type RootState } from "../../store";
 import { update, updateLabel, remove } from "../../slices/rectangleSlice";
 import type { Rectangle } from "../annotator/types/Rectangle";
 
-export const AnnotationEditor = () => {
+const AnnotationEditor = () => {
     const rectangles = useSelector((state: RootState) => state.rectangles.value);
     const attributes = useSelector((state: RootState) => state.attributes.value);
     const dispatch = useDispatch();
