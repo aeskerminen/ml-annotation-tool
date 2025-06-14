@@ -1,5 +1,5 @@
-import { ReactNode, useState } from 'react';
-import { ResizableBox, ResizeCallbackData } from 'react-resizable';
+import { type ReactNode, useState } from 'react';
+import { ResizableBox, type ResizeCallbackData } from 'react-resizable';
 import 'react-resizable/css/styles.css';
 
 interface ResizablePanelProps {
