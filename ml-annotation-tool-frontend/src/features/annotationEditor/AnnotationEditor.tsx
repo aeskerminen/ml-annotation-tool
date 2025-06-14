@@ -33,14 +33,14 @@ export const AnnotationEditor = () => {
                     {rectangles.length} items
                 </span>
             </header>
-            <section className="p-6 flex flex-col gap-4 flex-1 overflow-y-auto">
+            <section className="p-4 flex-1 overflow-y-scroll">
                 {rectangles.length === 0 ? (
                     <span className="text-[#1976d2] font-mono opacity-70">No annotations created yet.</span>
                 ) : (
                     rectangles.map((rect) => (
                         <div
                             key={rect.id}
-                            className={`border rounded-lg overflow-hidden ${selectedRect === rect.id ? 'border-[#1976d2] bg-[#e3f2fd]' : 'border-gray-200'
+                            className={`mt-2 border rounded-lg overflow-scroll ${selectedRect === rect.id ? 'border-[#1976d2] bg-[#e3f2fd]' : 'border-gray-200'
                                 }`}
                         >
                             <div
@@ -145,10 +145,11 @@ export const AnnotationEditor = () => {
                         </div>
                     ))
                 )}
-                <div className="mt-4 text-xs text-[#888] font-mono leading-relaxed bg-[#f5faff] border border-[#e3f2fd] p-3 rounded">
-                    <span className="font-bold text-[#1976d2]">Tip:</span> Click on an annotation to edit its properties. You can fine-tune the position, size, and rotation of each rectangle, or change its label.
-                </div>
+
             </section>
+            <div className="mt-4 m-4 text-xs text-[#888] font-mono leading-relaxed bg-[#f5faff] border border-[#e3f2fd] p-3 rounded">
+                <span className="font-bold text-[#1976d2]">Tip:</span> Click on an annotation to edit its properties. You can fine-tune the position, size, and rotation of each rectangle, or change its label.
+            </div>
         </aside>
     );
 };
