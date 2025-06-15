@@ -11,7 +11,7 @@ import { Toolbar } from './components/Toolbar';
 import { DEFAULT_IMAGE, DEFAULT_STAGE_SIZE, MIN_ZOOM, MAX_ZOOM, MIN_RECT_SIZE } from './utils/annotator_constants';
 import type { Rectangle } from './types/Rectangle';
 import { clamp } from './utils/helper_functions';
-import { add, update,  } from '../../slices/rectangleSlice';
+import { add, update, } from '../../slices/rectangleSlice';
 
 const Annotator = () => {
     const rectangles = useSelector((state: RootState) => state.rectangles.value);
@@ -193,18 +193,23 @@ const Annotator = () => {
 
     // Export to VOC XML
     const exportToVOCXML = useCallback(() => {
+        // Get filename from URL
+        const filename = customImageUrl === DEFAULT_IMAGE 
+            ? 'annotation_test_image.jpeg'
+            : customImageUrl.split('/').pop() || 'image.jpg';
+
         const raw_xml = createVOCXml({
-            filename: 'test.jpg',
-            path: 'test.jpg',
-            width: 8256,
-            height: 5504,
+            filename,
+            path: filename,
+            width: imageSize.width,
+            height: imageSize.height,
             boxes: rectangles
         });
         const blob = new Blob([raw_xml], { type: 'application/xml' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'annotation.xml';
+        a.download = filename.replace(/\.[^/.]+$/, '') + '.xml';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
