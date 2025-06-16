@@ -92,7 +92,7 @@ export const ImageStage = ({
                     width={workingImage?.width}
                     height={workingImage?.height}
                     stroke={'black'}
-                    strokeWidth={20} />
+                    strokeWidth={Math.min(workingImage?.width || 0, workingImage?.height || 0) * 0.002} />
                 {renderedRectangles}
                 <Transformer
                     ref={transformerRef}

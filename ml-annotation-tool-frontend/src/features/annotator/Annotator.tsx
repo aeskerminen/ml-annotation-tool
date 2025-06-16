@@ -19,6 +19,7 @@ const Annotator = () => {
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [customImageUrl, setCustomImageUrl] = useState<string>(DEFAULT_IMAGE);
+    const [originalFilename, setOriginalFilename] = useState<string>('annotation_test_image.jpeg');
     const [workingImage] = useImage(customImageUrl);
     const [imageSize, setImageSize] = useState({ width: 100, height: 100 });
     const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
@@ -150,13 +151,13 @@ const Annotator = () => {
             height: stageSize.height,
             id: uuidv4(),
             stroke: 'black',
-            strokeWidth: (stageSize.width + stageSize.height) / 250,
+            strokeWidth: Math.min(imageSize.width, imageSize.height) * 0.002,
             name: existingCount ? `${label} ${existingCount + 1}` : '',
             label,
             rotation: 0,
         };
         dispatch(add(newRect));
-    }, [stageSize, dispatch]);
+    }, [stageSize, imageSize, dispatch]);
 
     // Handle transform or drag
     const handleTransformOrDrag = useCallback((id: string, node: any) => {
@@ -193,10 +194,8 @@ const Annotator = () => {
 
     // Export to VOC XML
     const exportToVOCXML = useCallback(() => {
-        // Get filename from URL
-        const filename = customImageUrl === DEFAULT_IMAGE 
-            ? 'annotation_test_image.jpeg'
-            : customImageUrl.split('/').pop() || 'image.jpg';
+        // Use the original filename that we stored when the file was uploaded
+        const filename = originalFilename;
 
         const raw_xml = createVOCXml({
             filename,
@@ -209,12 +208,12 @@ const Annotator = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename.replace(/\.[^/.]+$/, '') + '.xml';
+        a.download = filename.replace(/\.[^/.]+$/, '') + '_VOC.xml';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-    }, [rectangles]);
+    }, [rectangles, originalFilename]);
 
 
     const uploadNewImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,6 +231,7 @@ const Annotator = () => {
             URL.revokeObjectURL(customImageUrl);
         }
 
+        setOriginalFilename(file.name);
         setCustomImageUrl(objectUrl);
     }, [customImageUrl]);
 
