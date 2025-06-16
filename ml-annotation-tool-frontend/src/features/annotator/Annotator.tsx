@@ -40,6 +40,25 @@ const Annotator = () => {
                 width: workingImage.width,
                 height: workingImage.height,
             });
+
+            // Calculate and set initial zoom to fit 80% of the container
+            if (containerRef.current) {
+                const containerWidth = containerRef.current.offsetWidth;
+                const containerHeight = containerRef.current.offsetHeight;
+                
+                const horizontalZoom = (containerWidth * 0.8) / workingImage.width;
+                const verticalZoom = (containerHeight * 0.8) / workingImage.height;
+                
+                // Use the smaller zoom level to ensure the image fits both dimensions
+                const newZoom = Math.min(horizontalZoom, verticalZoom);
+                setZoom(newZoom);
+
+                // Center the image in the container
+                setStagePosition({
+                    x: (containerWidth - (workingImage.width * newZoom)) / 2,
+                    y: (containerHeight - (workingImage.height * newZoom)) / 2
+                });
+            }
         }
     }, [workingImage]);
 
