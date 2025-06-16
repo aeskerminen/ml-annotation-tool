@@ -144,11 +144,19 @@ const Annotator = () => {
     const addAnnotation = useCallback((label?: string) => {
         if (!label) return;
         const existingCount = rectangles.filter(r => r.label === label).length;
+        // Calculate initial rectangle size as a percentage of the image dimensions
+        const initialWidth = imageSize.width * 0.2; // 20% of image width
+        const initialHeight = imageSize.height * 0.2; // 20% of image height
+        
+        // Center the rectangle in the image
+        const x = (imageSize.width - initialWidth) / 2;
+        const y = (imageSize.height - initialHeight) / 2;
+
         const newRect: Rectangle = {
-            x: 0,
-            y: 0,
-            width: stageSize.width,
-            height: stageSize.height,
+            x,
+            y,
+            width: initialWidth,
+            height: initialHeight,
             id: uuidv4(),
             stroke: 'black',
             strokeWidth: Math.min(imageSize.width, imageSize.height) * 0.002,
